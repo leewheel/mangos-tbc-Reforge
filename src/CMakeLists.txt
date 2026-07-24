@@ -22,31 +22,16 @@ if(BUILD_GAME_SERVER OR BUILD_LOGIN_SERVER OR BUILD_EXTRACTORS)
 endif()
 
 # Playerbots module
+#By leewheel 2026-07-24 使用本地源码，不再FetchContent联网拉取
 if(BUILD_PLAYERBOTS)
-  include(FetchContent)
-
-  FetchContent_Declare(
-    PlayerBots
-    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/modules/PlayerBots"
-    GIT_REPOSITORY "https://github.com/cmangos/playerbots.git"
-    GIT_TAG "master"
-  )
-
-  FetchContent_GetProperties(PlayerBots)
-  if (NOT playerbots_POPULATED)
-    FetchContent_Populate(PlayerBots)
-    message(STATUS "Playerbots module source dir: ${playerbots_SOURCE_DIR}")
-  else()
-    message(STATUS "Playerbots module already populated: ${playerbots_POPULATED}")
+  if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/modules/PlayerBots/CMakeLists.txt")
+    message(FATAL_ERROR "PlayerBots source not found at src/modules/PlayerBots/ - please clone https://github.com/cmangos/playerbots.git there")
   endif()
-
-  add_subdirectory(${playerbots_SOURCE_DIR})
-
+  message(STATUS "Playerbots module source dir: ${CMAKE_CURRENT_SOURCE_DIR}/modules/PlayerBots")
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/modules/PlayerBots)
 else()
   if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/modules/PlayerBots)
     message(STATUS "PlayerBots module exists, but not building. You can remove it manually if you don't need it. (rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/modules/PlayerBots)")
-
-    #file(REMOVE_RECURSE ${CMAKE_CURRENT_SOURCE_DIR}/modules/PlayerBots)
   endif()
 endif()
 

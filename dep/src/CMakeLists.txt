@@ -25,25 +25,18 @@ if(BUILD_EXTRACTORS AND NOT (BZip2_FOUND OR BZIP2_FOUND))
 endif()
 
 # zlib
+#By leewheel 2026-07-24 使用本地bundled zlib源码，不再从GitHub下载
 find_package(ZLIB CONFIG COMPONENTS static)
 if (NOT ZLIB_FOUND OR ZLIB_VERSION_STRING VERSION_LESS 1.3.2)
-  FetchContent_Declare(
-    zlib
-    GIT_REPOSITORY "https://github.com/madler/zlib.git"
-    GIT_TAG "v1.3.2"
-  )
-  FetchContent_GetProperties(zlib)
-  if(NOT zlib_POPULATED)
-    message(STATUS "Setting up zlib ...")
-    set(ZLIB_BUILD_SHARED  false)
-    set(ZLIB_BUILD_STATIC  true)
-    set(ZLIB_BUILD_TESTING false)
-    set(ZLIB_INSTALL       false)
-    FetchContent_MakeAvailable(zlib)
-    # CMaNGOS links a target named "zlib"; zlib's static target is "zlibstatic".
-    add_library(zlib ALIAS zlibstatic)
-    message(STATUS "zlib successfully set up!")
-  endif()
+  message(STATUS "Setting up zlib (local bundled source) ...")
+  set(ZLIB_BUILD_SHARED  false)
+  set(ZLIB_BUILD_STATIC  true)
+  set(ZLIB_BUILD_TESTING false)
+  set(ZLIB_INSTALL       false)
+  add_subdirectory(zlib)
+  # CMaNGOS links a target named "zlib"; zlib's static target is "zlibstatic".
+  add_library(zlib ALIAS zlibstatic)
+  message(STATUS "zlib successfully set up!")
 else()
   add_library(zlib INTERFACE)
   target_include_directories(zlib INTERFACE ${ZLIB_INCLUDE_DIRS})

@@ -205,6 +205,10 @@ if(POLICY CMP0167)
 endif()
 
 # Find needed packages and if necessery abort if something important is missing
+#By leewheel 2026-07-24 设置本地Boost路径，避免CMake GUI手动配置
+if(NOT Boost_DIR)
+  set(Boost_DIR "C:/local/boost_1_81_0/lib64-msvc-14.3/cmake/Boost-1.81.0")
+endif()
 find_package(Boost 1.70.0 REQUIRED COMPONENTS program_options thread regex serialization filesystem)
 if (UNIX OR APPLE)
     find_package(ICU COMPONENTS uc i18n data REQUIRED)
