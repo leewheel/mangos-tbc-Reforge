@@ -35,6 +35,9 @@
 #include "MaNGOSsoap.h"
 #include "Mails/MassMailMgr.h"
 #include "Server/DBCStores.h"
+//By leewheel 2026-07-25 BNet服务器集成
+#include "Hotfix/BnetServer.h"
+//End By leewheel
 
 #include "Config/Config.h"
 #include "Database/DatabaseEnv.h"
@@ -248,11 +251,25 @@ int Master::Run()
         if (sConfig.GetBoolDefault("SOAP.Enabled", false))
             soapThread.reset(new SOAPThread(sConfig.GetStringDefault("SOAP.IP", "127.0.0.1"), sConfig.GetIntDefault("SOAP.Port", 7878)));
 
+        //By leewheel 2026-07-25 启动BNet服务器（TLS监听+REST登录，集成在mangosd进程内）
+        bool bnetEnable = sConfig.GetBoolDefault("BNet.Enable", true);
+        if (bnetEnable)
+        {
+            if (!sBnetServer.Start())
+                sLog.outError("BNet服务器启动失败，2.5.3客户端将无法连接");
+        }
+        //End By leewheel
+
         // wait for shut down and then let things go out of scope to close them down
         while (!World::IsStopped())
             std::this_thread::sleep_for(std::chrono::seconds(1));
 
         world_thread.wait();
+
+        //By leewheel 2026-07-25 停止BNet服务器
+        if (bnetEnable)
+            sBnetServer.Stop();
+        //End By leewheel
 
         m_context.stop();
 

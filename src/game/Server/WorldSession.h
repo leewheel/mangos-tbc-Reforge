@@ -28,6 +28,10 @@
 #include "Globals/SharedDefines.h"
 #include "Entities/ObjectGuid.h"
 #include "AuctionHouse/AuctionHouseMgr.h"
+//By leewheel 2026-07-25 现代客户端socket支持
+#include <memory>
+class ModernWorldSocket;
+//End By leewheel
 #include "Entities/Item.h"
 #include "WorldSocket.h"
 #include "Multithreading/Messager.h"
@@ -264,6 +268,11 @@ class WorldSession
         char const* GetPlayerName() const;
         std::string GetChatType(uint32 type);
         void SetSecurity(AccountTypes security) { _security = security; }
+//By leewheel 2026-07-25 现代客户端 socket 桥接
+        void SetModernSocket(std::shared_ptr<ModernWorldSocket> sock) { m_modernSocket = sock; }
+        std::shared_ptr<ModernWorldSocket> GetModernSocket() const { return m_modernSocket; }
+        bool IsModernClient() const { return m_modernSocket != nullptr; }
+//End By leewheel
 #if defined(BUILD_DEPRECATED_PLAYERBOT) || defined(ENABLE_PLAYERBOTS)
         // Players connected without socket are bot
         const std::string GetRemoteAddress() const { return m_socket ? m_socket->GetRemoteAddress() : "disconnected/bot"; }
@@ -951,6 +960,9 @@ class WorldSession
         Player* _player;
         std::shared_ptr<WorldSocket> m_socket;              // socket pointer is owned by the network thread which created it
         std::shared_ptr<WorldSocket> m_requestSocket;       // a new socket for this session is requested (double connection)
+//By leewheel 2026-07-25 现代客户端 socket（2.5.3 客户端用此通道收发包）
+        std::shared_ptr<ModernWorldSocket> m_modernSocket;
+//End By leewheel
         std::string m_localAddress;
         WorldSessionState m_sessionState;                   // this session state
 

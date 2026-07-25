@@ -22,6 +22,9 @@
 
 #include "Server/WorldSocket.h"                                    // must be first to make ACE happy with ACE includes in it
 #include "Common.h"
+//By leewheel 2026-07-25 现代客户端发包通道
+#include "Hotfix/ModernWorldSocket.h"
+//End By leewheel
 #include "Auth/CryptoHash.h"
 #include "Database/DatabaseEnv.h"
 #include "Log/Log.h"
@@ -124,6 +127,14 @@ WorldSession::~WorldSession()
 
         m_socket->FinalizeSession();
     }
+//By leewheel 2026-07-25 关闭现代客户端 socket
+    if (m_modernSocket)
+    {
+        if (!m_modernSocket->IsClosed())
+            m_modernSocket->Close();
+        m_modernSocket.reset();
+    }
+//End By leewheel
 }
 
 void WorldSession::SetOffline()
@@ -145,13 +156,23 @@ void WorldSession::SetOffline()
         m_socket->FinalizeSession();
         m_socket = nullptr;
     }
+//By leewheel 2026-07-25 关闭现代客户端 socket
+    if (m_modernSocket)
+    {
+        if (!m_modernSocket->IsClosed())
+            m_modernSocket->Close();
+        m_modernSocket.reset();
+    }
+//End By leewheel
 
     m_sessionState = WORLD_SESSION_STATE_OFFLINE;
 }
 
 void WorldSession::SetOnline()
 {
-    if (_player && m_socket && !m_socket->IsClosed())
+//By leewheel 2026-07-25 现代客户端也可 SetOnline
+    if (_player && ((m_socket && !m_socket->IsClosed()) || (m_modernSocket && !m_modernSocket->IsClosed())))
+//End By leewheel
     {
         m_sessionState = WORLD_SESSION_STATE_READY;
         m_kickTime = 0;
@@ -218,6 +239,13 @@ void WorldSession::SendPacket(WorldPacket const& packet, bool forcedSend /*= fal
 
     if (!m_socket || (m_sessionState != WORLD_SESSION_STATE_READY && !forcedSend))
     {
+//By leewheel 2026-07-25 现代客户端走 ModernWorldSocket 通道
+        if (m_modernSocket && (m_sessionState == WORLD_SESSION_STATE_READY || forcedSend))
+        {
+            m_modernSocket->SendPacket(packet);
+            return;
+        }
+//End By leewheel
         //sLog.outDebug("Refused to send %s to %s", packet.GetOpcodeName(), _player ? _player->GetName() : "UKNOWN");
         return;
     }
@@ -260,7 +288,6 @@ void WorldSession::SendPacket(WorldPacket const& packet, bool forcedSend /*= fal
 
     m_socket->SendPacket(packet);
 }
-
 /// Add an incoming packet to the queue
 void WorldSession::QueuePacket(std::unique_ptr<WorldPacket> new_packet)
 {
@@ -394,7 +421,11 @@ bool WorldSession::Update(uint32 /*diff*/)
 
     ///- Retrieve packets from the receive queue and call the appropriate handlers
     /// not process packets if socket already closed
-    while (m_socket && !m_socket->IsClosed() && !recvQueueCopy.empty())
+//By leewheel 2026-07-25 现代客户端无 m_socket，用 m_modernSocket 判断连接有效性
+    bool socketAlive = (m_socket && !m_socket->IsClosed()) ||
+                       (m_modernSocket && !m_modernSocket->IsClosed());
+//End By leewheel
+    while (socketAlive && !recvQueueCopy.empty())
     {
         // sLog.outError("MOEP: %s (0x%.4X)", packet->GetOpcodeName(), packet->GetOpcode());
 

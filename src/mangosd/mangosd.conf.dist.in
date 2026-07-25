@@ -99,9 +99,31 @@ LoginDatabaseConnections = 1
 WorldDatabaseConnections = 1
 CharacterDatabaseConnections = 1
 LogsDatabaseConnections = 1
+#By leewheel 2026-07-25 hotfixes库SELECT连接数
+HotfixDatabaseConnections = 1
+#End By leewheel
 MaxPingTime = 30
 WorldServerPort = 8085
 BindIP = "0.0.0.0"
+
+#By leewheel 2026-07-25 BNet服务器配置（现代客户端 2.5.3 Battle.net 认证）
+#    BNet.Enable - 是否启用BNet服务器（默认启用）
+#    BNet.Port - BNet TLS 监听端口（默认1119）
+#    BNet.RestPort - REST登录端点端口（默认8081）
+#    BNet.BindIP - 绑定地址
+#    BNet.ExternalAddress - 客户端可达的外部地址（用于生成登录URL和服务器地址）
+#    BNet.Threads - BNet工作线程数
+#    BNet.RealmName - 显示给客户端的服务器名称
+#    ModernWorldPort - 现代客户端(2.5.3) World TCP 监听端口（默认8086）
+BNet.Enable = 1
+BNet.Port = 1119
+BNet.RestPort = 8081
+BNet.BindIP = "0.0.0.0"
+BNet.ExternalAddress = "127.0.0.1"
+BNet.Threads = 2
+BNet.RealmName = "LWCore TBC"
+ModernWorldPort = 8086
+#End By leewheel
 SD2ErrorLogFile = "SD2Errors.log"
 Spawns.ZoneArea = 0
 
