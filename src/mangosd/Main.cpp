@@ -62,6 +62,9 @@ DatabaseType WorldDatabase;                                 ///< Accessor to the
 DatabaseType CharacterDatabase;                             ///< Accessor to the character database
 DatabaseType LoginDatabase;                                 ///< Accessor to the realm/login database
 DatabaseType LogsDatabase;                                  ///< Accessor to the logs database
+//By leewheel 2026-07-25 hotfixes库访问器（DB2热修复与代理配置数据）
+DatabaseType HotfixDatabase;                                ///< Accessor to the hotfixes database
+//End By leewheel
 
 uint32 realmID;                                             ///< Id of the realm
 

@@ -48,6 +48,9 @@
 #include "AI/CreatureAIRegistry.h"
 #include "Policies/Singleton.h"
 #include "BattleGround/BattleGroundMgr.h"
+//By leewheel 2026-07-25 hotfix/代理配置数据管理器
+#include "Hotfix/HotfixDataMgr.h"
+//End By leewheel
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "VMapFactory.h"
 #include "MotionGenerators/MoveMap.h"
@@ -1500,6 +1503,10 @@ void World::SetInitialWorldSettings()
     auctionbot.Init();
 #endif
 #endif
+
+    //By leewheel 2026-07-25 从hotfixes库加载hotfix/代理配置数据到内存（开发目标3）
+    sHotfixDataMgr.LoadAll();
+    //End By leewheel
 
     sLog.outString("---------------------------------------");
     sLog.outString("      CMANGOS: World initialized       ");

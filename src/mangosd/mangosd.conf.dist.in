@@ -38,6 +38,10 @@ ConfVersion=2024020101
 #    CharacterDatabaseInfo
 #    LogsDatabaseInfo
 #        Database connection settings for the world server.
+#By leewheel 2026-07-25 hotfixes库连接（DB2热修复与现代客户端数据，必需，缺失则服务端无法启动）
+#    HotfixDatabaseInfo
+#        Database connection settings for the hotfixes database (DB2 hotfix & modern client data, required).
+#End By leewheel
 #        Default:
 #                ---MYSQL---
 #                    hostname;port;username;password;database
@@ -52,6 +56,9 @@ ConfVersion=2024020101
 #    WorldDatabaseConnections
 #    CharacterDatabaseConnections
 #    LogsDatabaseConnections
+#By leewheel 2026-07-25 hotfixes库SELECT连接数
+#    HotfixDatabaseConnections
+#End By leewheel
 #        Amount of connections to database which will be used for SELECT queries. Maximum 16 connections per database.
 #        Please, note, for data consistency only one connection for each database is used for transactions and async SELECTs.
 #        So formula to find out how many connections will be established: X = #_connections + 1
@@ -81,10 +88,13 @@ ConfVersion=2024020101
 RealmID = 1
 DataDir = "."
 LogsDir = ""
-LoginDatabaseInfo     = "127.0.0.1;3306;mangos;mangos;tbcrealmd"
-WorldDatabaseInfo     = "127.0.0.1;3306;mangos;mangos;tbcmangos"
-CharacterDatabaseInfo = "127.0.0.1;3306;mangos;mangos;tbccharacters"
-LogsDatabaseInfo      = "127.0.0.1;3306;mangos;mangos;tbclogs"
+LoginDatabaseInfo     = "127.0.0.1;3388;trinity;trinity;tbcrealmd"
+WorldDatabaseInfo     = "127.0.0.1;3388;trinity;trinity;tbcworld"
+CharacterDatabaseInfo = "127.0.0.1;3388;trinity;trinity;tbccharacters"
+LogsDatabaseInfo      = "127.0.0.1;3388;trinity;trinity;tbclogs"
+#By leewheel 2026-07-25 hotfixes库（DB2热修复与现代客户端数据）
+HotfixDatabaseInfo    = "127.0.0.1;3388;trinity;trinity;hotfixes"
+#End By leewheel
 LoginDatabaseConnections = 1
 WorldDatabaseConnections = 1
 CharacterDatabaseConnections = 1
@@ -367,6 +377,11 @@ AccountData = 0
 #        Log file of DB errors detected at server run
 #        Default: "DBErrors.log"
 #
+#    MissingOpcodeLogFile
+#        Log file of missing/unhandled opcodes received from client (By leewheel 2026-07-24)
+#        Default: "MissingOpcodes.log"
+#                 "" - Empty name disable creating log file
+#
 #    EventAIErrorLogFile
 #        Log file of EventAI errors detected at server run
 #        Default: "EventAIErrors.log"
@@ -454,6 +469,9 @@ GmLogFile = ""
 GmLogTimestamp = 0
 GmLogPerAccount = 0
 RaLogFile = ""
+#By leewheel 2026-07-24 缺失opcode专用日志文件，记录服务端未处理/未知的opcode便于后期维护改进
+MissingOpcodeLogFile = "MissingOpcodes.log"
+#End By leewheel
 LogColors = ""
 
 ###################################################################################################################

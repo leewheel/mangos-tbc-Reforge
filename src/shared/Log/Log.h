@@ -172,6 +172,9 @@ class Log : public MaNGOS::Singleton<Log, MaNGOS::ClassLevelLockable<Log, std::m
         void outCharDump(const char* str, uint32 account_id, uint32 guid, const char* name);
         void outRALog(const char* str, ...)       ATTR_PRINTF(2, 3);
         void outCustomLog(const char* str, ...)       ATTR_PRINTF(2, 3);
+        //By leewheel 2026-07-24 缺失opcode专用日志，记录服务端未处理/未知的opcode便于后期维护改进
+        void outMissingOpcode(const char* str, ...)   ATTR_PRINTF(2, 3);
+        //End By leewheel
         uint32 GetLogLevel() const { return m_logLevel; }
         void SetLogLevel(char* level);
         void SetLogFileLevel(char* level);
@@ -207,6 +210,9 @@ class Log : public MaNGOS::Singleton<Log, MaNGOS::ClassLevelLockable<Log, std::m
         FILE* scriptErrLogFile;
         FILE* worldLogfile;
         FILE* customLogFile;
+        //By leewheel 2026-07-24 缺失opcode专用日志文件
+        FILE* missingOpcodeLogFile;
+        //End By leewheel
 
         std::mutex m_worldLogMtx;
         std::mutex m_traceLogMtx;

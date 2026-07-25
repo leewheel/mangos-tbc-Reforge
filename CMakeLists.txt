@@ -28,6 +28,12 @@ endif()
 
 project(CMaNGOS_TBC)
 
+#By leewheel 2026-07-25 MSVC 设定源文件/执行字符集为 UTF-8，支持中文字符输出（参照 WotlkClassic）
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+#End By leewheel
+
 # Require C++ 20 support
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

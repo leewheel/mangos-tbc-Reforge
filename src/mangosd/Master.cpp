@@ -299,6 +299,9 @@ int Master::Run()
     WorldDatabase.HaltDelayThread();
     LoginDatabase.HaltDelayThread();
     LogsDatabase.HaltDelayThread();
+    //By leewheel 2026-07-25 释放hotfixes库延迟线程
+    HotfixDatabase.HaltDelayThread();
+    //End By leewheel
 
     sLog.outString("Halting process...");
 
@@ -464,6 +467,36 @@ bool Master::_StartDB()
         LoginDatabase.HaltDelayThread();
         return false;
     }
+
+    //By leewheel 2026-07-25 初始化hotfixes库（DB2热修复与现代客户端数据，必需库）
+    //该库为必需库：配置缺失或连接失败则关闭服务端。无版本表，不做CheckRequiredField
+    dbstring = sConfig.GetStringDefault("HotfixDatabaseInfo", "");
+    nConnections = sConfig.GetIntDefault("HotfixDatabaseConnections", 1);
+    if (dbstring.empty())
+    {
+        sLog.outError("Hotfix database not specified in configuration file");
+
+        ///- Wait for already started DB delay threads to end
+        WorldDatabase.HaltDelayThread();
+        CharacterDatabase.HaltDelayThread();
+        LoginDatabase.HaltDelayThread();
+        LogsDatabase.HaltDelayThread();
+        return false;
+    }
+
+    sLog.outString("Hotfix Database total connections: %i", nConnections + 1);
+    if (!HotfixDatabase.Initialize(dbstring.c_str(), nConnections))
+    {
+        sLog.outError("Cannot connect to hotfix database %s", dbstring.c_str());
+
+        ///- Wait for already started DB delay threads to end
+        WorldDatabase.HaltDelayThread();
+        CharacterDatabase.HaltDelayThread();
+        LoginDatabase.HaltDelayThread();
+        LogsDatabase.HaltDelayThread();
+        return false;
+    }
+    //End By leewheel
 
     sLog.outString();
 

@@ -70,7 +70,7 @@ const int LogType_count = int(LogError) + 1;
 
 Log::Log() :
     raLogfile(nullptr), logfile(nullptr), gmLogfile(nullptr), charLogfile(nullptr), dberLogfile(nullptr),
-    eventAiErLogfile(nullptr), scriptErrLogFile(nullptr), worldLogfile(nullptr), customLogFile(nullptr), m_colored(false), m_includeTime(false), m_gmlog_per_account(false), m_scriptLibName(nullptr)
+    eventAiErLogfile(nullptr), scriptErrLogFile(nullptr), worldLogfile(nullptr), customLogFile(nullptr), missingOpcodeLogFile(nullptr), m_colored(false), m_includeTime(false), m_gmlog_per_account(false), m_scriptLibName(nullptr)
 {
     Initialize();
 }
@@ -272,6 +272,9 @@ void Log::Initialize()
     worldLogfile = openLogFile("WorldLogFile", "WorldLogTimestamp", "a");
     scriptErrLogFile = openLogFile("SD2ErrorLogFile", nullptr, "a");
     customLogFile = openLogFile("CustomLogFile", nullptr, "a");
+    //By leewheel 2026-07-24 打开缺失opcode专用日志文件
+    missingOpcodeLogFile = openLogFile("MissingOpcodeLogFile", nullptr, "a");
+    //End By leewheel
 
     // Main log file settings
     m_includeTime  = sConfig.GetBoolDefault("LogTime", false);
@@ -972,6 +975,26 @@ void Log::outCustomLog(const char* str, ...)
 
     fflush(stdout);
 }
+
+//By leewheel 2026-07-24 缺失opcode专用日志实现，写入MissingOpcodeLogFile便于后期维护改进
+void Log::outMissingOpcode(const char* str, ...)
+{
+    if (!str)
+        return;
+
+    std::lock_guard<std::mutex> guard(m_worldLogMtx);
+    if (missingOpcodeLogFile)
+    {
+        va_list ap;
+        outTimestamp(missingOpcodeLogFile);
+        va_start(ap, str);
+        vfprintf(missingOpcodeLogFile, str, ap);
+        fprintf(missingOpcodeLogFile, "\n");
+        va_end(ap);
+        fflush(missingOpcodeLogFile);
+    }
+}
+//End By leewheel
 
 void Log::WaitBeforeContinueIfNeed()
 {

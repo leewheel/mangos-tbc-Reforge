@@ -39,6 +39,9 @@
 #include <deque>
 #include <mutex>
 #include <memory>
+//By leewheel 2026-07-24 缺失opcode去重集合所需头文件
+#include <unordered_set>
+//End By leewheel
 
 #include <boost/circular_buffer.hpp>
 
@@ -934,7 +937,15 @@ class WorldSession
         void LogUnexpectedOpcode(WorldPacket const& packet, const char* reason) const;
         void LogUnprocessedTail(WorldPacket const& packet) const;
 
+        //By leewheel 2026-07-24 缺失opcode日志辅助方法，记录未处理/未知opcode便于后期维护改进
+        void LogMissingOpcode(WorldPacket const& packet, const char* reason);
+        //End By leewheel
+
         void ProcessByteBufferException(WorldPacket const& packet);
+
+        //By leewheel 2026-07-24 已记录过的缺失opcode集合，避免日志刷屏
+        std::unordered_set<uint16> m_loggedMissingOpcodes;
+        //End By leewheel
 
         uint32 m_GUIDLow;                                   // set logged or recently logout player (while m_playerRecentlyLogout set)
         Player* _player;

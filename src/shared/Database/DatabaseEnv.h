@@ -74,5 +74,8 @@ extern DatabaseType WorldDatabase;
 extern DatabaseType CharacterDatabase;
 extern DatabaseType LoginDatabase;
 extern DatabaseType LogsDatabase;
+//By leewheel 2026-07-25 hotfixes库：存放DB2热修复与现代客户端数据（必需库）
+extern DatabaseType HotfixDatabase;
+//End By leewheel
 
 #endif

@@ -332,6 +332,25 @@ void WorldSession::LogUnprocessedTail(WorldPacket const& packet) const
                   packet.rpos(), packet.wpos());
 }
 
+//By leewheel 2026-07-24 缺失opcode日志：记录服务端未处理/未知的opcode到专用日志文件，便于后期维护改进
+void WorldSession::LogMissingOpcode(WorldPacket const& packet, const char* reason)
+{
+    uint16 opcode = packet.GetOpcode();
+
+    // 同一会话内相同opcode只记录一次，避免日志刷屏
+    if (!m_loggedMissingOpcodes.insert(opcode).second)
+        return;
+
+    sLog.outMissingOpcode("缺失opcode: %s (0x%.4X) | 原因: %s | 账号: %u | 角色: %s | IP: %s",
+                          packet.GetOpcodeName(),
+                          opcode,
+                          reason ? reason : "未知",
+                          GetAccountId(),
+                          _player ? _player->GetName() : "<未登录>",
+                          GetRemoteAddress().c_str());
+}
+//End By leewheel
+
 void WorldSession::ProcessByteBufferException(WorldPacket const& packet)
 {
     sLog.outError("WorldSession::Update ByteBufferException occured while parsing a packet (opcode: %u) from client %s, accountid=%i.",
@@ -381,6 +400,14 @@ bool WorldSession::Update(uint32 /*diff*/)
 
         auto const packet = std::move(recvQueueCopy.front());
         recvQueueCopy.pop_front();
+
+        //By leewheel 2026-07-24 opcode越界保护：超出范围的opcode记录到缺失日志并跳过，避免opcodeTable数组越界崩溃
+        if (packet->GetOpcode() >= NUM_MSG_TYPES)
+        {
+            LogMissingOpcode(*packet, "opcode超出服务端定义范围(NUM_MSG_TYPES)");
+            continue;
+        }
+        //End By leewheel
 
         OpcodeHandler const& opHandle = opcodeTable[packet->GetOpcode()];
         switch (opHandle.status)
@@ -443,6 +470,9 @@ bool WorldSession::Update(uint32 /*diff*/)
                 DEBUG_LOG("SESSION: received not handled opcode %s (0x%.4X)",
                           packet->GetOpcodeName(),
                           packet->GetOpcode());
+                //By leewheel 2026-07-24 未处理opcode记录到专用缺失日志，便于后期维护改进
+                LogMissingOpcode(*packet, "STATUS_UNHANDLED(服务端未实现该opcode处理)");
+                //End By leewheel
                 break;
             default:
                 sLog.outError("SESSION: received wrong-status-req opcode %s (0x%.4X)",
