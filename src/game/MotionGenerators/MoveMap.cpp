@@ -168,7 +168,13 @@ namespace MMAP
     void MMapManager::loadAllMapTiles(std::string const& basePath, uint32 mapId)
     {
         auto itr = loadedMMaps.find(mapId);
-        MANGOS_ASSERT(itr != loadedMMaps.end());
+        //By leewheel 2026-07-25 临时修复：无 mmap 文件时安全返回
+        if (itr == loadedMMaps.end())
+        {
+            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:loadAllMapTiles: map %u not loaded, skipping", mapId);
+            return;
+        }
+        //End By leewheel
         const auto& mmapData = itr->second;
 
         if (mmapData->fullLoaded)
@@ -199,7 +205,13 @@ namespace MMAP
     {
         // get this mmap data
         auto itr = loadedMMaps.find(mapId);
-        MANGOS_ASSERT(itr != loadedMMaps.end()); // must not occur here as it would not be thread safe - only in loadMapData through loadMapInstance
+        //By leewheel 2026-07-25 临时修复：无 mmap 文件时安全返回，避免断言崩溃
+        if (itr == loadedMMaps.end())
+        {
+            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:loadMap: map %u not loaded in loadMapData, skipping tile (%d,%d)", mapId, x, y);
+            return false;
+        }
+        //End By leewheel
 
         const auto& mmapData = itr->second;
 

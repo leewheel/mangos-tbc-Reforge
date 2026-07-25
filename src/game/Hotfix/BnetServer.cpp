@@ -27,6 +27,9 @@
 #include "Log/Log.h"
 #include "Config/Config.h"
 #include "Auth/CryptoHash.h"
+//By leewheel 2026-07-25 使用SRP6验证账号密码（替代不存在的sha_pass_hash列）
+#include "Auth/SRP6.h"
+//End By leewheel
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -402,8 +405,9 @@ std::string BnetServer::HandleRestLogin(const std::string& method, const std::st
         std::string safeAccount = accountName;
         LoginDatabase.escape_string(safeAccount);
 
+        //By leewheel 2026-07-25 使用SRP6验证（v和s字段），替代不存在的sha_pass_hash列
         auto result = LoginDatabase.PQuery(
-            "SELECT id, sha_pass_hash, expansion, sessionkey FROM account WHERE username='%s'",
+            "SELECT id, v, s, expansion, sessionkey FROM account WHERE username='%s'",
             safeAccount.c_str());
 
         if (!result)
@@ -415,22 +419,32 @@ std::string BnetServer::HandleRestLogin(const std::string& method, const std::st
 
         Field* fields = result->Fetch();
         uint32 accountId = fields[0].GetUInt32();
-        std::string dbPassHash = fields[1].GetCppString();
-        uint8 expansion = fields[2].GetUInt8();
+        std::string dbVerifier = fields[1].GetCppString();   // v (SRP6 verifier, hex)
+        std::string dbSalt = fields[2].GetCppString();        // s (SRP6 salt, hex)
+        uint8 expansion = fields[3].GetUInt8();
 
-        // 验证密码：SHA1(UPPER(username):UPPER(password))
+        // 验证密码：使用SRP6计算verifier并与数据库中的v比较
+        // rI = SHA1(UPPER(username):UPPER(password)) 的hex字符串
         Sha1Hash sha;
         std::string token = accountName + ":" + password;
         sha.UpdateData(token);
         sha.Finalize();
 
-        // 转为hex字符串
         std::ostringstream hashOss;
         for (int i = 0; i < 20; ++i)
             hashOss << std::hex << std::setfill('0') << std::setw(2) << uint32(sha.GetDigest()[i]);
-        std::string computedHash = hashOss.str();
+        std::string rI = hashOss.str();
 
-        if (computedHash != dbPassHash)
+        // 使用SRP6验证
+        SRP6 srp;
+        bool passValid = false;
+        if (srp.CalculateVerifier(rI, dbSalt.c_str()))
+        {
+            passValid = srp.ProofVerifier(dbVerifier);
+        }
+        //End By leewheel
+
+        if (!passValid)
         {
             sLog.outBasic("[BNet REST] 登录失败：密码错误 %s 来自 %s", accountName.c_str(), remoteAddr.c_str());
             std::string json = R"({"authentication_state":"LOGIN","error_code":"UNABLE_TO_DECODE","error_message":"Invalid credentials"})";

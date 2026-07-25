@@ -28,6 +28,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 // 生物模型碰撞高度（lw_creature_model_collision）
 struct LwCreatureModelCollision
@@ -74,6 +75,20 @@ class HotfixDataMgr
         // 物品法术数据（lw_item_spells_data）
         bool GetItemSpellsData(uint32 spellId, LwItemSpellsData& out) const;
 
+//By leewheel 2026-07-25 DB2 数据查询与序列化（供 CMSG_DB_QUERY_BULK 响应）
+        // 按 tableHash 查询 DB2 记录并序列化为 2.5.3 客户端期望的二进制格式
+        // 返回 true 表示找到记录并成功序列化，outData 为序列化后的数据
+        bool GetDb2RecordData(uint32 tableHash, uint32 recordId, std::vector<uint8>& outData);
+
+        // DB2 表哈希常量（与 ModernWorldSocket.h DB2Hash 命名空间一致）
+        static const uint32 DB2HASH_BroadcastText       = 0x021826BB;
+        static const uint32 DB2HASH_Item                = 0x50238EC2;
+        static const uint32 DB2HASH_ItemSparse          = 0x919BE54E;
+        static const uint32 DB2HASH_ItemEffect          = 0x4002A5B1;
+        static const uint32 DB2HASH_ItemAppearance      = 0x42261B89;
+        static const uint32 DB2HASH_ItemModifiedAppearance = 0xE491AC55;
+//End By leewheel
+
     private:
         // 各表加载子函数
         void LoadSpellSet(const char* table, std::unordered_set<uint32>& out, uint32& count);
@@ -84,6 +99,21 @@ class HotfixDataMgr
         void LoadCreatureModelCollision();
         void LoadItemSpellsData();
         void LoadTransports();
+
+//By leewheel 2026-07-25 DB2 记录序列化辅助方法
+        // 查询 item 表并序列化为 2.5.3 客户端 Item DB2 格式
+        bool SerializeItemRecord(uint32 recordId, std::vector<uint8>& outData);
+        // 查询 item_sparse 表并序列化为 2.5.3 客户端 ItemSparse DB2 格式
+        bool SerializeItemSparseRecord(uint32 recordId, std::vector<uint8>& outData);
+        // 查询 broadcast_text 表并序列化为 2.5.3 客户端 BroadcastText DB2 格式
+        bool SerializeBroadcastTextRecord(uint32 recordId, std::vector<uint8>& outData);
+        // 查询 item_effect 表并序列化
+        bool SerializeItemEffectRecord(uint32 recordId, std::vector<uint8>& outData);
+        // 查询 item_appearance 表并序列化
+        bool SerializeItemAppearanceRecord(uint32 recordId, std::vector<uint8>& outData);
+        // 查询 item_modified_appearance 表并序列化
+        bool SerializeItemModifiedAppearanceRecord(uint32 recordId, std::vector<uint8>& outData);
+//End By leewheel
 
         // 法术集合
         std::unordered_set<uint32> m_auraSpells;

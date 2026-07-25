@@ -20,6 +20,7 @@
 #include "Hotfix/ModernWorldSocket.h"
 #include "Hotfix/ModernOpcodeHandler.h"
 #include "Hotfix/BnetSocket.h"
+#include "Hotfix/HotfixDataMgr.h"
 #include "Server/WorldPacket.h"
 #include "Server/WorldSession.h"
 #include "Server/Opcodes.h"
@@ -635,6 +636,12 @@ void ModernWorldSocket::HandleIncomingPacket(uint32 modernOpcode, const uint8* d
         HandlePlayerLogin(data, len);
         return;
     }
+    // 角色删除（PackedGuid128 → uint64）
+    if (modernOpcode == ModernWorldOpcode::CMSG_CHAR_DELETE)
+    {
+        TranslateGuidOnlyCmsg(0x038, data, len); // CMSG_CHAR_DELETE legacy = 0x038
+        return;
+    }
     //End By leewheel
 
     // 翻译 modern opcode → legacy opcode
@@ -909,9 +916,20 @@ void ModernWorldSocket::HandleDbQueryBulk(const uint8* data, size_t len)
                           (uint32(data[readByteIdx+2]) << 16) | (uint32(data[readByteIdx+3]) << 24);
         readByteIdx += 4;
 
-        // 对不同表类型进行处理，当前返回 Invalid 状态（客户端会使用本地缓存）
-        // TODO: 后续从 hotfixes 库查询实际数据并填充响应
-        SendDbReply(tableHash, recordId, timestamp, 0 /*Invalid*/, nullptr, 0);
+        //By leewheel 2026-07-25 从 hotfixes 库查询实际数据并填充响应
+        std::vector<uint8> recordData;
+        if (sHotfixDataMgr.GetDb2RecordData(tableHash, recordId, recordData))
+        {
+            // 找到记录，返回 Valid 状态(1) + 实际数据
+            SendDbReply(tableHash, recordId, timestamp, 1 /*Valid*/,
+                        recordData.data(), recordData.size());
+        }
+        else
+        {
+            // 未找到记录，返回 Invalid 状态(0)，客户端使用本地缓存
+            SendDbReply(tableHash, recordId, timestamp, 0 /*Invalid*/, nullptr, 0);
+        }
+        //End By leewheel
     }
 }
 
@@ -1096,6 +1114,38 @@ void ModernWorldSocket::HandlePlayerLogin(const uint8* data, size_t len)
 
     // 构造 legacy 包体（仅包含 uint64 GUID）
     auto pkt = std::make_unique<WorldPacket>(Opcodes(0x03D), 8); // CMSG_PLAYER_LOGIN = 0x03D
+    *pkt << uint64(legacyGuid);
+
+    m_session->QueuePacket(std::move(pkt));
+}
+
+// ============================================================================
+// 通用: 仅含 PackedGuid128 的 CMSG 翻译为 uint64 GUID（如 CMSG_CHAR_DELETE）
+// ============================================================================
+
+void ModernWorldSocket::TranslateGuidOnlyCmsg(uint16 legacyOpcode, const uint8* data, size_t len)
+{
+    // 现代格式: PackedGuid128
+    // Legacy 格式: uint64 GUID
+    size_t offset = 0;
+    uint64 guidLow = 0, guidHigh = 0;
+    if (!ReadPackedGuid128(data, len, offset, guidLow, guidHigh))
+    {
+        sLog.outError("[ModernWorld] TranslateGuidOnlyCmsg(0x%04X) 解析 GUID 失败 来自 %s",
+            legacyOpcode, GetRemoteAddress().c_str());
+        return;
+    }
+
+    // Low64 就是 legacy GUID 值
+    uint64 legacyGuid = guidLow;
+    sLog.outBasic("[ModernWorld] TranslateGuidOnlyCmsg: legacy opcode 0x%04X, GUID=0x%016llX 来自 %s",
+        legacyOpcode, (unsigned long long)legacyGuid, GetRemoteAddress().c_str());
+
+    if (!m_session)
+        return;
+
+    // 构造 legacy 包体（仅包含 uint64 GUID）
+    auto pkt = std::make_unique<WorldPacket>(Opcodes(legacyOpcode), 8);
     *pkt << uint64(legacyGuid);
 
     m_session->QueuePacket(std::move(pkt));

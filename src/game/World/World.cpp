@@ -898,6 +898,7 @@ void World::SetInitialWorldSettings()
     ///- Initialize config settings
     LoadConfigSettings();
 
+    //By leewheel 2026-07-25 地图文件已提取完成，恢复地图检查
     ///- Check the existence of the map files for all races start areas.
     if (!MapManager::ExistMapAndVMap(0, -6240.32f, 331.033f) ||                     // Dwarf/ Gnome
             !MapManager::ExistMapAndVMap(0, -8949.95f, -132.493f) ||                // Human
@@ -913,6 +914,7 @@ void World::SetInitialWorldSettings()
         Log::WaitBeforeContinueIfNeed();
         exit(1);
     }
+    //End By leewheel
 
     ///- Loading strings. Getting no records means core load has to be canceled because no error message can be output.
     sLog.outString("Loading MaNGOS strings...");

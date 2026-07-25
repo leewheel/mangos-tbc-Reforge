@@ -148,7 +148,11 @@ void CliRunnable::run()
         }
         else if (feof(stdin))
         {
-            World::StopNow(SHUTDOWN_EXIT_CODE);
+            //By leewheel 2026-07-25 修复：后台运行时 stdin EOF 不应导致服务端关闭
+            //等待外部停止信号（如 Ctrl+C 或 World::StopNow）
+            clearerr(stdin);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            //End By leewheel
         }
     }
 
